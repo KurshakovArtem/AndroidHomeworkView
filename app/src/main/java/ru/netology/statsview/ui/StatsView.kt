@@ -4,6 +4,8 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.PointF
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
@@ -49,6 +51,7 @@ class StatsView @JvmOverloads constructor(
         style = Paint.Style.STROKE
         strokeJoin = Paint.Join.ROUND
         strokeCap = Paint.Cap.ROUND
+        xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_OVER)
     }
 
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -73,16 +76,25 @@ class StatsView @JvmOverloads constructor(
             return
         }
         val sum = data.sum()
-
+        val firstOvalColor = colors.getOrNull(0) ?: randomColor()
         var startFrom = -90F
+
         for ((index, datum) in data.withIndex()) {
             val angle = 360F * (datum / sum)
-            paint.color = colors.getOrNull(index) ?: randomColor()
+            if (index == 0) {
+                paint.color = firstOvalColor
+            } else {
+                paint.color = colors.getOrNull(index) ?: randomColor()
+            }
             canvas.drawArc(oval, startFrom, angle, false, paint)
             startFrom += angle
         }
+        paint.color = firstOvalColor
+        // сновар рисуем первый овал, но только на половину длины
+        canvas.drawArc(oval, -90F, (360F * (data[0]) / sum) / 2, false, paint)
+
         canvas.drawText(
-            "%.2f%%".format( 100F),
+            "%.2f%%".format(100F),
             center.x,
             center.y + textPaint.textSize / 4,
             textPaint
