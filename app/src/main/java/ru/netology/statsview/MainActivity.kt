@@ -12,13 +12,15 @@ class MainActivity : ComponentActivity() {
         val binding = ActivityAppBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        binding.stats.data = listOf(
-            0.70F,
-            0.20F,
-            0.20F,
-            0.50F,
-            0.25F,
-        )
-
+        binding.stats.apply {
+            data = listOf(
+                0.70F,
+                0.20F,
+                0.20F,
+                0.50F,
+                0.25F,
+            )
+            fullFilling = 3F
+        }
     }
 }

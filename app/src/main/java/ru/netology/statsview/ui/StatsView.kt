@@ -40,6 +40,7 @@ class StatsView @JvmOverloads constructor(
         }
     }
 
+    var fullFilling: Float? = null
     var data: List<Float> = emptyList()
         set(value) {
             field = value
@@ -75,7 +76,11 @@ class StatsView @JvmOverloads constructor(
         if (data.isEmpty()) {
             return
         }
-        val sum = data.sum()
+        val sum =
+            if (fullFilling == null || fullFilling!! < data.sum()) data.sum() else fullFilling!!
+        paint.color = 0xFFE5E5E5.toInt()
+        canvas.drawCircle(center.x, center.y, radius, paint)
+
         val firstOvalColor = colors.getOrNull(0) ?: randomColor()
         var startFrom = -90F
 
@@ -94,7 +99,7 @@ class StatsView @JvmOverloads constructor(
         canvas.drawArc(oval, -90F, (360F * (data[0]) / sum) / 2, false, paint)
 
         canvas.drawText(
-            "%.2f%%".format(100F),
+            "%.2f%%".format((data.sum() / sum) * 100F),
             center.x,
             center.y + textPaint.textSize / 4,
             textPaint
