@@ -8,9 +8,9 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <array name="colors">
-        <item>@color/purple_700</item>
-        <item>@color/teal_200</item>
-        <item>#FFDE0300</item>
-        <item>#FF532400</item>
+        <item>#6200EE</item>
+        <item>#03DAC5</item>
+        <item>#FFDE03</item>
+        <item>#FF0266</item>
     </array>
 </resources>
