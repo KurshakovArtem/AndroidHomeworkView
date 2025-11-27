@@ -13,10 +13,11 @@ class MainActivity : ComponentActivity() {
         setContentView(binding.root)
 
         binding.stats.data = listOf(
-            0.25F,
-            0.25F,
-            0.25F,
-            0.25F,
+            0.20F,
+            0.20F,
+            0.20F,
+            0.20F,
+            0.20F
         )
 
     }

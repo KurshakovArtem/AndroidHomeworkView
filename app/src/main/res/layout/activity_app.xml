@@ -11,7 +11,8 @@
         android:layout_width="300dp"
         android:layout_height="300dp"
         android:layout_gravity="center"
-        app:lineWidth="40dp"
+        app:animType="parallel"
+        app:lineWidth="20dp"
         app:fontSize="50dp"
         app:colors="@array/colors"/>
 
