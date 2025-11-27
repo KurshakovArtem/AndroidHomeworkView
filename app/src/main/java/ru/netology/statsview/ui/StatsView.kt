@@ -1,5 +1,6 @@
 package ru.netology.statsview.ui
 
+import android.animation.AnimatorSet
 import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
@@ -8,7 +9,7 @@ import android.graphics.PointF
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
-import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.DecelerateInterpolator
 import android.view.animation.LinearInterpolator
 import androidx.core.content.withStyledAttributes
 import ru.netology.statsview.R
@@ -33,6 +34,10 @@ class StatsView @JvmOverloads constructor(
 
     private var progress = 0F
     private var valueAnimator: ValueAnimator? = null
+    private var animType = 0
+    private val animators = mutableListOf<ValueAnimator>()
+    private var animatorSet: AnimatorSet? = null
+    private val animationTime: Long = 5000L
 
 
     init {
@@ -41,15 +46,23 @@ class StatsView @JvmOverloads constructor(
             fontSize = getDimension(R.styleable.StatsView_fontSize, fontSize)
             val resId = getResourceId(R.styleable.StatsView_colors, 0)
             colors = resources.getIntArray(resId).toList()
+            animType = getInteger(R.styleable.StatsView_animType, 0)
         }
     }
 
     var data: List<Float> = emptyList()
         set(value) {
             field = value
-            update()
+            when (animType) {
+                0, 2 -> update()
+                1 -> {
+                    createAnimatorsSet()
+                    progressList = MutableList(data.size) { 0F }
+                }
+            }
         }
 
+    private var progressList = MutableList(data.size) { 0F }
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         strokeWidth = lineWidth
         style = Paint.Style.STROKE
@@ -78,11 +91,57 @@ class StatsView @JvmOverloads constructor(
         if (data.isEmpty()) {
             return
         }
+
+        // Заполняем список цветами, чтобы во время выполнения цикла цвета не рандомились заного (мерцание цветов)
+        while (true) {
+            if (colors.size < data.size) {
+                colors = colors + listOf(randomColor())
+            } else break
+        }
+
         var startFrom = -90F
+
         for ((index, datum) in data.withIndex()) {
             val angle = 360F * datum
             paint.color = colors.getOrNull(index) ?: randomColor()
-            canvas.drawArc(oval,  startFrom + (360 * progress), angle * progress, false, paint)
+            when (animType) {
+                0 -> {
+                    canvas.drawArc(
+                        oval,
+                        startFrom + (360F * progress),
+                        angle * progress,
+                        false,
+                        paint
+                    )
+                }
+
+                1 -> {
+                    canvas.drawArc(
+                        oval,
+                        startFrom,
+                        progressList[index],
+                        false,
+                        paint
+                    )
+                }
+
+                2 -> {
+                    canvas.drawArc(
+                        oval,
+                        startFrom + (angle / 2),
+                        (angle / 2) * progress,
+                        false,
+                        paint
+                    )
+                    canvas.drawArc(
+                        oval,
+                        startFrom + (angle / 2),
+                        -(angle / 2) * progress,
+                        false,
+                        paint
+                    )
+                }
+            }
             startFrom += angle
         }
         canvas.drawText(
@@ -91,10 +150,9 @@ class StatsView @JvmOverloads constructor(
             center.y + textPaint.textSize / 4,
             textPaint
         )
-
     }
 
-    private fun update(){
+    private fun update() {
         valueAnimator?.let {
             it.removeAllListeners()
             it.cancel()
@@ -102,15 +160,41 @@ class StatsView @JvmOverloads constructor(
         progress = 0F
 
         valueAnimator = ValueAnimator.ofFloat(0F, 1F).apply {
-            addUpdateListener{ anim ->
+            addUpdateListener { anim ->
                 progress = anim.animatedValue as Float
                 invalidate()
             }
-            duration = 5000
-            interpolator = AccelerateDecelerateInterpolator()
+            duration = animationTime
+            interpolator = DecelerateInterpolator()
+            startDelay = 3000
         }.also {
             it.start()
         }
+    }
+
+    private fun createAnimatorsSet() {
+        animators.clear()
+        animatorSet?.cancel()
+        val sum = data.sum()
+
+        for ((index, datum) in data.withIndex()) {
+            val animator =
+                ValueAnimator.ofFloat(0f, (360F * (datum / sum))).apply {
+                    duration = (animationTime * (datum / sum)).toLong()
+                    interpolator = LinearInterpolator()
+                    addUpdateListener { anim ->
+                        progressList[index] = anim.animatedValue as Float
+                        invalidate()
+                    }
+                }
+            animators.add(animator)
+        }
+        animatorSet = AnimatorSet().apply {
+            playSequentially(animators.toList())
+        }
+        animatorSet?.apply {
+            startDelay = 3000
+        }?.start()
     }
 
     private fun randomColor() = Random.nextInt(0xFF000000.toInt(), 0xFFFFFFFF.toInt())
